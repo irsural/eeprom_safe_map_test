@@ -213,7 +213,7 @@ void eeprom_safe_map_t<K, V>::tick()
       /// Запись не была найдена
       if (it == m_keys.end()) {
         m_status = status_t::add_key;
-        m_add_status = add_status_t::data_sector;
+        m_add_status = add_status_t::new_info;
       }
       /// Запись была найдена
       else {
@@ -268,17 +268,17 @@ void eeprom_safe_map_t<K, V>::tick()
         switch (m_action_status) {
             case action_status_t::free: {
                 m_status = status_t::free;
-            }
+            } break;
             case action_status_t::read_value: {
                 assert(mp_buf_to_save_value != nullptr);
                 *mp_buf_to_save_value = m_current_value;
                 mp_buf_to_save_value = nullptr;
                 m_status = status_t::free;
-            }
+            } break;
             case action_status_t::write_value: {
                 m_current_value = m_new_value;
                 set_wait_page_mem_status(status_t::prep_write_value);
-            }
+            } break;
         }
         m_action_status = action_status_t::free;
     } break;
@@ -334,7 +334,7 @@ bool eeprom_safe_map_t<K, V>::add_key()
         for (uint32_t i = 0; i < m_page_size; ++i) {
           m_page_buffer[i] = m_data_sector_default_value_byte;
         }
-        set_wait_page_mem_status(status_t::add_key, add_status_t::create_data_sector);
+        set_wait_page_mem_status(status_t::add_key, add_status_t::data_sector);
       }
     } break;
 
@@ -345,7 +345,7 @@ bool eeprom_safe_map_t<K, V>::add_key()
         m_current_sector_page = 0;
         set_wait_page_mem_status(status_t::add_key, add_status_t::key_prep);
       } else {
-        set_wait_page_mem_status(status_t::add_key, add_status_t::create_data_sector);
+        set_wait_page_mem_status(status_t::add_key, add_status_t::data_sector);
       }
     } break;
 
@@ -416,15 +416,14 @@ void eeprom_safe_map_t<K, V>::change_key(const K& a_key, action_status_t a_actio
   m_status = status_t::find_actual_value;
   m_current_key = a_key;
   m_current_sector_page = 0;
+  m_current_sector_index = 0;
   m_action_status = a_action_status;
 }
 
 template<class K, class V>
 void eeprom_safe_map_t<K, V>::reset()
 {
-    for (unsigned char & i : m_page_buffer) {
-        i = 0;
-    }
+    *reinterpret_cast<K*>(m_page_buffer.data()) = m_terminator_key;
     while (!mp_page->ready()) {
     mp_page->tick();
     }
@@ -433,24 +432,9 @@ void eeprom_safe_map_t<K, V>::reset()
     while (!mp_page->ready()) {
         mp_page->tick();
     }
-
-    for (unsigned char & i : m_page_buffer) {
-        i = 0xff;
-    }
-  /// Очистка первого сектора данных
-  for (size_t i = 0; i < m_data_sector_size_pages; ++i) {
-    mp_page->write_page(m_page_buffer.data(), m_info_sector_size_pages + i);
-    while (!mp_page->ready()) {
-      mp_page->tick();
-    }
-  }
-  /// Нулевой ключ всегда остается
-  m_keys_count = 1;
+  m_keys_count = 0;
   m_keys.clear();
-  m_keys.emplace_back(m_current_key);
-  m_current_sector_page = 0;
-  m_current_sector_index = 0;
-  m_current_value = m_default_value;
+  change_key(m_current_key, action_status_t::write_value);
 }
 
 template<class K, class V>
