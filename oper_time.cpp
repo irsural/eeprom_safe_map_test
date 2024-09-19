@@ -68,7 +68,7 @@ oper_time_t::oper_time_t(eeprom_safe_map_t<combination_t, uint32_t>* ap_eeprom_s
   m_combination(a_start_combination),
   m_combination_time(0),
   m_save_time_period_min(a_save_time_period_min),
-  m_delay_timer(irs::make_cnt_s(m_work_timer_period_m * 60))
+  m_delay_timer(irs::make_cnt_s(m_work_timer_period_m/* * 60*/))
 {
   set_enabled(m_is_enabled);
 }

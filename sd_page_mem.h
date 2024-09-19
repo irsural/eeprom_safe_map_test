@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <string>
 
 #define FREE_SPACE_BYTES static_cast<uint32_t>(1 << 11)
 
@@ -45,7 +47,10 @@ private:
   const string path = "/home/u516/tmp/eeprom.txt";
   fstream m_ios;
 
+  vector<vector<uint8_t>> m_eeprom;
+
   void initialize_io_operation(uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status);
+  void print_txt();
 };
 
 #endif // NOISE_GENERATOR_SD_PAGE_MEM_H

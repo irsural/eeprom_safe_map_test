@@ -28,10 +28,10 @@ namespace irs {
         uint32_t m_delay = 0;
         uint32_t m_worked_time = 0;
         bool m_is_started = false;
-        bool m_is_stopped = false;
+        bool m_is_stopped = true;
         bool m_is_result_checked = false;
 
-        uint32_t current_time() const;
+        [[nodiscard]] uint32_t current_time() const;
     };
 }
 

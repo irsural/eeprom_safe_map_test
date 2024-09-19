@@ -10,7 +10,13 @@ sd_page_mem_t::sd_page_mem_t(
   m_page_size(a_page_size),
   m_start_page(a_start_page)
 {
+    m_eeprom.resize(m_page_count);
     m_ios.open(path);
+    for (int i = 0; i < m_page_count; ++i) {
+        m_eeprom[i].resize(m_page_size);
+        m_ios.get((char*)(m_eeprom[i].data()), m_page_size + 1);
+    }
+    m_ios.close();
 }
 
 void sd_page_mem_t::read_page(uint8_t* ap_buf, uint32_t a_index)
@@ -44,13 +50,16 @@ void sd_page_mem_t::tick()
     case sd_page_mem_state_t::ready: {
     } break;
     case sd_page_mem_state_t::read: {
-        m_ios.seekg(m_page_index * m_page_size);
-        m_ios.read((char*)mp_buffer, m_page_size);
-      m_status = sd_page_mem_state_t::ready;
+        for (int i = 0; i < m_page_size; ++i) {
+            mp_buffer[i] = m_eeprom[m_page_index][i];
+        }
+        m_status = sd_page_mem_state_t::ready;
     } break;
     case sd_page_mem_state_t::write: {
-        m_ios.seekp(m_page_index * m_page_size);
-        m_ios.write((char*)mp_buffer, m_page_size);
+        for (int i = 0; i < m_page_size; ++i) {
+            m_eeprom[m_page_index][i] = mp_buffer[i];
+        }
+        print_txt();
         m_status = sd_page_mem_state_t::ready;
     } break;
   }
@@ -76,4 +85,15 @@ void sd_page_mem_t::initialize_io_operation(
   if (a_index > m_page_count - 1) {
     m_error_status = 1;
   }
+}
+
+void sd_page_mem_t::print_txt()
+{
+    m_ios.open(path);
+    for (int i = 0; i < m_page_count; ++i) {
+        for (int j = 0; j < m_page_size; ++j) {
+            m_ios << m_eeprom[i][j];
+        }
+    }
+    m_ios.close();
 }
