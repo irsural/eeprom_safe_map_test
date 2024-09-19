@@ -364,6 +364,7 @@ bool eeprom_safe_map_t<K, V>::add_key()
       *reinterpret_cast<K*>(m_page_buffer.data() +
         (m_keys_count - m_keys_per_page * m_current_sector_page - 1) * m_bytes_per_key) =
         m_current_key;
+      /// Проверка на наличие места для ключа терминатора в текущей странице
       if (m_keys_count / m_keys_per_page == m_current_sector_page) {
         *reinterpret_cast<K*>(m_page_buffer.data() +
           (m_keys_count - m_keys_per_page * m_current_sector_page) * m_bytes_per_key) =
@@ -374,7 +375,7 @@ bool eeprom_safe_map_t<K, V>::add_key()
         is_adding_ended = true;
         m_add_status = add_status_t::free;
       } else {
-        read_page(m_current_sector_page + 1);
+        write_page(m_current_sector_page);
         set_wait_page_mem_status(status_t::add_key, add_status_t::empty_key);
       }
     } break;
