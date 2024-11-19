@@ -316,6 +316,7 @@ void eeprom_safe_map_t<K, V>::add_key()
         for (uint32_t i = 0; i < m_page_size; ++i) {
           m_page_buffer[i] = m_data_sector_default_value_byte;
         }
+        m_current_sector_page = 0;
         m_add_status = add_status_t::add_data_sector;
       }
     } break;
@@ -355,6 +356,9 @@ void eeprom_safe_map_t<K, V>::add_key()
       // Добавление символа-терминатора в конец, если он не был добавлен в предыдущем состоянии
     case add_status_t::add_terminator_key: {
       IRS_ASSERT(m_current_sector_page + 1 < m_info_sector_size_pages);
+      for (uint8_t& i : m_page_buffer) {
+          i = m_data_sector_default_value_byte;
+      }
       *reinterpret_cast<K*>(m_page_buffer.data()) = m_terminator_key;
       write_page(m_current_sector_page + 1, status_t::add_ended);
     } break;
