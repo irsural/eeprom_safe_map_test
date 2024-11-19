@@ -224,7 +224,6 @@ void eeprom_safe_map_t<K, V>::tick()
         m_current_sector = key_index % m_data_max_sectors_count;
         m_current_value_cell = key_index / m_data_max_sectors_count;
         read_page(get_data_sector_start_page(m_current_sector), status_t::find_current_value);
-        m_status = status_t::find_current_value;
       }
     } break;
 
@@ -243,8 +242,8 @@ void eeprom_safe_map_t<K, V>::tick()
       // Поиск последней записи значения
     case status_t::find_current_value: {
       uint8_t value_index = read_index(m_current_value_cell);
-      bool no_jump = ident_index == (m_current_sector_index + 1) % (m_data_sector_size_pages + 1);
-      bool has_value = ident_index != m_data_sector_default_value_byte;
+      bool no_jump = value_index == (m_current_value_index + 1) % (m_data_sector_size_pages + 1);
+      bool has_value = value_index != m_data_sector_default_value_byte;
       bool in_range = m_current_sector_page < m_data_sector_size_pages;
       if ((m_current_sector_page == 0 || (in_range && no_jump)) && has_value) {
         m_current_value_index = value_index;
@@ -303,9 +302,6 @@ template<class K, class V>
 void eeprom_safe_map_t<K, V>::add_key()
 {
   switch (m_add_status) {
-    case add_status_t::free: {
-    } break;
-
     case add_status_t::update_info: {
       m_keys.emplace_back(m_current_key);
       m_keys_count++;
@@ -398,15 +394,13 @@ void eeprom_safe_map_t<K, V>::page_mem_tick()
 {
   if (mp_page->ready()) {
     switch (m_page_mem_op) {
-      case page_mem_op_t::free: {
-      } break;
       case page_mem_op_t::read: {
         mp_page->read_page(m_page_buffer.data(), m_page_mem_page_index);
-        m_page_mem_op = page_mem_op_t::wait;
+        m_page_mem_op = page_mem_op_t::end_op;
       } break;
       case page_mem_op_t::write: {
         mp_page->write_page(m_page_buffer.data(), m_page_mem_page_index);
-        m_page_mem_op = page_mem_op_t::wait;
+        m_page_mem_op = page_mem_op_t::end_op;
       } break;
       case page_mem_op_t::end_op: {
         m_status = m_next_status;
