@@ -4,7 +4,6 @@
 #include "eeprom_safe_map.h"
 #include <array>
 #include <sd_page_mem.h>
-#include "irs_simulation.h"
 
 using combination_t = std::array<uint8_t, 8>;
 
@@ -23,8 +22,10 @@ public:
   [[nodiscard]] bool ready() const;
 
 private:
-  /// Задержка между инкрементированием таймера в минутах
+  // Период между инкрементированием таймера в минутах
   static const int m_work_timer_period_m = 1;
+
+  static const uint32_t m_default_combination_time = 0;
 
   enum class status_t {
     idle,
@@ -39,7 +40,7 @@ private:
   combination_t m_combination;
   uint32_t m_combination_time;
 
-  /// Задержка записи в eeprom в периодах инкрементирования
+  // Задержка записи в eeprom в периодах инкрементирования
   uint32_t m_save_time_period_min;
 
   irs::timer_t m_delay_timer;

@@ -48,7 +48,7 @@ public:
 private:
   enum class status_t {
     free,
-    find_current_key,
+    find_actual_value,
     add_key,
     add_ended,
     find_current_value,
@@ -56,26 +56,28 @@ private:
     wait_page_mem
   };
   enum class add_status_t {
+    free,
     update_info,
     add_data_sector,
     add_key_prep,
     add_key,
     add_terminator_key
   };
-  enum class action_t {
-    none,
+  enum class action_status_t {
+    free,
     read_value,
     write_value
   };
   enum class page_mem_op_t {
+    free,
     read,
     write,
-    end_op
+    wait
   };
 
   static const uint32_t m_bytes_per_key = sizeof(K);
   static const uint32_t m_bytes_per_value = sizeof(V);
-  static const uint32_t m_bytes_per_value_index = 1;
+  static const uint32_t m_bytes_per_page_index = 1;
   static const uint8_t m_data_sector_default_value_byte = 0xff;
 
   sd_page_mem_t* mp_page;
@@ -87,14 +89,14 @@ private:
   V m_current_value;
   V m_new_value;
   uint32_t m_current_sector;
-  uint32_t m_current_sector_page;
-  uint8_t m_current_value_index;
+  uint32_t m_current_sector_page_index;
+  uint8_t m_current_sector_index;
   uint32_t m_current_value_cell;
   status_t m_status;
   status_t m_next_status;
   add_status_t m_add_status;
   add_status_t m_next_add_status;
-  action_t m_action_status;
+  action_status_t m_action_status;
   uint32_t m_keys_count;
   uint32_t m_values_per_page;
   uint32_t m_keys_per_page;
@@ -111,12 +113,12 @@ private:
   /// \details Ассинхронно читает и пишет в номера страниц, относительно стартовой страницы,
   /// используя внутренний буффер
   void read_page(uint32_t a_page_index, status_t a_next_status,
-    add_status_t a_next_add_status = add_status_t::update_info);
+    add_status_t a_next_add_status = add_status_t::free);
   void write_page(uint32_t a_page_index, status_t a_next_status,
-    add_status_t a_next_add_status = add_status_t::update_info);
+    add_status_t a_next_add_status = add_status_t::free);
   void page_mem_tick();
 
-  void change_key(const K& a_key, action_t a_action_status);
+  void change_key(const K& a_key, action_status_t a_action_status);
   void evaluate_info_sector_size(uint32_t a_free_page_count);
   void get_keys();
 
@@ -143,33 +145,32 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(sd_page_mem_t* ap_page, size_t a_free
   m_current_value {},
   m_new_value(),
   m_current_sector(0),
-  m_current_sector_page(0),
-  m_current_value_index(0),
+  m_current_sector_page_index(0),
+  m_current_sector_index(0),
   m_current_value_cell(0),
   m_status(status_t::free),
   m_next_status(status_t::free),
-  m_add_status(),
-  m_next_add_status(),
-  m_action_status(),
+  m_add_status(add_status_t::free),
+  m_next_add_status(add_status_t::free),
+  m_action_status(action_status_t::free),
   m_keys_count(0),
   m_values_per_page(0),
   m_keys_per_page(0),
   m_info_sector_size_pages(0),
   m_data_max_sectors_count(0),
   mp_buf_to_save_value(nullptr),
-  m_page_mem_op(),
+  m_page_mem_op(page_mem_op_t::free),
   m_page_mem_page_index(0),
   mp_debug_page(
     new sd_page_mem_t(mp_page->start_page(), mp_page->page_size(), mp_page->start_page()))
 {
-  // Максимальный индекс должен быть на 1 больше количества страниц для работы алгоритма обнаружения
-  // актуального сектора
+  // Для индексов страниц выделен 1 байт
   IRS_ASSERT(m_data_sector_size_pages < 255);
   evaluate_info_sector_size(a_free_space_bytes / m_page_size);
   get_keys();
 
   // Получение текущего значения
-  change_key(m_current_key, action_t::none);
+  change_key(m_current_key, action_status_t::free);
 }
 
 template<class K, class V>
@@ -181,11 +182,11 @@ bool eeprom_safe_map_t<K, V>::set_value(const K& a_key, V& a_value)
   }
   m_new_value = a_value;
   if (m_current_key != a_key) {
-    change_key(a_key, action_t::write_value);
+    change_key(a_key, action_status_t::write_value);
   } else {
     m_current_value = m_new_value;
-    read_page(
-      get_data_sector_start_page(m_current_sector) + m_current_sector_page, status_t::write_value);
+    read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
+      status_t::write_value);
   }
   return true;
 }
@@ -198,7 +199,7 @@ bool eeprom_safe_map_t<K, V>::get_value(const K& a_key, V& a_value)
   if (it == m_keys.end()) {
     return false;
   } else {
-    change_key(a_key, action_t::read_value);
+    change_key(a_key, action_status_t::read_value);
     mp_buf_to_save_value = &a_value;
     return true;
   }
@@ -212,7 +213,7 @@ void eeprom_safe_map_t<K, V>::tick()
     case status_t::free: {
     } break;
 
-    case status_t::find_current_key: {
+    case status_t::find_actual_value: {
       auto it = std::find(m_keys.begin(), m_keys.end(), m_current_key);
       // Запись не была найдена
       if (it == m_keys.end()) {
@@ -224,6 +225,7 @@ void eeprom_safe_map_t<K, V>::tick()
         m_current_sector = key_index % m_data_max_sectors_count;
         m_current_value_cell = key_index / m_data_max_sectors_count;
         read_page(get_data_sector_start_page(m_current_sector), status_t::find_current_value);
+        m_status = status_t::find_current_value;
       }
     } break;
 
@@ -233,67 +235,70 @@ void eeprom_safe_map_t<K, V>::tick()
     } break;
 
     case status_t::add_ended: {
-      m_current_sector_page = 0;
-      m_current_value_index = 0;
+      m_current_sector_page_index = 0;
+      m_current_sector_index = 0;
       m_current_value = m_new_value;
-      read_page(get_data_sector_start_page(m_current_sector), status_t::write_value);
+      read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
+        status_t::write_value);
     } break;
 
       // Поиск последней записи значения
     case status_t::find_current_value: {
-      uint8_t value_index = read_index(m_current_value_cell);
-      bool no_jump = value_index == (m_current_value_index + 1) % (m_data_sector_size_pages + 1);
-      bool has_value = value_index != m_data_sector_default_value_byte;
-      bool in_range = m_current_sector_page < m_data_sector_size_pages;
-      if ((m_current_sector_page == 0 || (in_range && no_jump)) && has_value) {
-        m_current_value_index = value_index;
+      uint8_t page_index = read_index(m_current_value_cell);
+      if (((page_index == (m_current_sector_index + 1) % (m_data_sector_size_pages + 1) &&
+             m_current_sector_page_index < m_data_sector_size_pages) ||
+            m_current_sector_page_index == 0) &&
+        page_index != m_data_sector_default_value_byte) {
+        m_current_sector_index = page_index;
         m_current_value = read_value(m_current_value_cell);
-        m_current_sector_page++;
-        if (m_current_sector_page < m_data_sector_size_pages) {
-          read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
+        m_current_sector_page_index++;
+        if (m_current_sector_page_index < m_data_sector_size_pages) {
+          read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
             status_t::find_current_value);
         }
       } else {
-        if (m_current_sector_page == 0) {
-          m_current_value_index = 0;
+        if (m_current_sector_page_index == 0) {
+          m_current_sector_index = 0;
+        } else if (m_current_sector_page_index == m_data_sector_size_pages) {
+          m_current_sector_page_index = 0;
+          m_current_sector_index = (m_current_sector_index + 1) % (m_data_sector_size_pages + 1);
         } else {
-          m_current_value_index = (m_current_value_index + 1) % (m_data_sector_size_pages + 1);
-          if (m_current_sector_page == m_data_sector_size_pages) {
-            m_current_sector_page = 0;
-          }
+          m_current_sector_index = (m_current_sector_index + 1) % (m_data_sector_size_pages + 1);
         }
         switch (m_action_status) {
-          case action_t::none: {
+          case action_status_t::free: {
             m_status = status_t::free;
           } break;
-          case action_t::read_value: {
+          case action_status_t::read_value: {
             IRS_ASSERT(mp_buf_to_save_value != nullptr);
             *mp_buf_to_save_value = m_current_value;
             mp_buf_to_save_value = nullptr;
             m_status = status_t::free;
           } break;
-          case action_t::write_value: {
+          case action_status_t::write_value: {
             m_current_value = m_new_value;
-            read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
+            read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
               status_t::write_value);
           } break;
         }
-        m_action_status = action_t::none;
+        m_action_status = action_status_t::free;
       }
     } break;
 
       // Запись новой ячейки значения в следующую страницу сектора
     case status_t::write_value: {
       write_value(m_current_value_cell, m_current_value);
-      write_index(m_current_value_cell, m_current_value_index);
+      write_index(m_current_value_cell, m_current_sector_index);
       write_page(
-        get_data_sector_start_page(m_current_sector) + m_current_sector_page, status_t::free);
-      m_current_value_index = (m_current_value_index + 1) % (m_data_sector_size_pages + 1);
-      m_current_sector_page = (m_current_sector_page + 1) % m_data_sector_size_pages;
+        get_data_sector_start_page(m_current_sector) + m_current_sector_page_index, status_t::free);
+      m_current_sector_index = (m_current_sector_index + 1) % (m_data_sector_size_pages + 1);
+      m_current_sector_page_index = (m_current_sector_page_index + 1) % m_data_sector_size_pages;
     } break;
 
     case status_t::wait_page_mem: {
-      page_mem_tick();
+      if (mp_page->ready()) {
+        page_mem_tick();
+      }
     } break;
   }
 }
@@ -302,6 +307,9 @@ template<class K, class V>
 void eeprom_safe_map_t<K, V>::add_key()
 {
   switch (m_add_status) {
+    case add_status_t::free: {
+    } break;
+
     case add_status_t::update_info: {
       m_keys.emplace_back(m_current_key);
       m_keys_count++;
@@ -316,51 +324,48 @@ void eeprom_safe_map_t<K, V>::add_key()
         for (uint32_t i = 0; i < m_page_size; ++i) {
           m_page_buffer[i] = m_data_sector_default_value_byte;
         }
-        m_current_sector_page = 0;
         m_add_status = add_status_t::add_data_sector;
       }
     } break;
 
     case add_status_t::add_data_sector: {
-      if (m_current_sector_page < m_data_sector_size_pages - 1) {
-        write_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
-          status_t::add_key, add_status_t::add_data_sector);
-        m_current_sector_page++;
-      } else {
-        write_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
+      if (m_current_sector_page_index == m_data_sector_size_pages - 1) {
+        write_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
           status_t::add_key, add_status_t::add_key_prep);
+        m_current_sector_page_index = 0;
+      } else {
+        write_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page_index,
+          status_t::add_key, add_status_t::add_data_sector);
       }
+      m_current_sector_page_index++;
     } break;
 
       // Копируется страница, в которую будет добавлена запись
     case add_status_t::add_key_prep: {
       // -1 для перевода из кол-ва в индекс
-      m_current_sector_page = (m_keys_count - 1) / m_keys_per_page;
-      read_page(m_current_sector_page, status_t::add_key, add_status_t::add_key);
+      m_current_sector_page_index = (m_keys_count - 1) / m_keys_per_page;
+      read_page(m_current_sector_page_index, status_t::add_key, add_status_t::add_key);
     } break;
 
       // Вставка измененной страницы, которая была взята на предыдущем шаге
     case add_status_t::add_key: {
-      // m_keys_count - m_notes_per_page * m_current_sector_page - 1 = номер
+      // m_keys_count - m_notes_per_page * m_current_sector_page_index - 1 = номер
       // записи в текущей странице
-      write_key(m_keys_count - m_keys_per_page * m_current_sector_page - 1, m_current_key);
+      write_key(m_keys_count - m_keys_per_page * m_current_sector_page_index - 1, m_current_key);
       // Проверка на наличие места для ключа-терминатора в текущей странице
-      if (m_keys_count / m_keys_per_page == m_current_sector_page) {
-        write_key(m_keys_count - m_keys_per_page * m_current_sector_page, m_terminator_key);
-        write_page(m_current_sector_page, status_t::add_ended);
+      if (m_keys_count / m_keys_per_page == m_current_sector_page_index) {
+        write_key(m_keys_count - m_keys_per_page * m_current_sector_page_index, m_terminator_key);
+        write_page(m_current_sector_page_index, status_t::add_ended);
       } else {
-        write_page(m_current_sector_page, status_t::add_key, add_status_t::add_terminator_key);
+        write_page(
+          m_current_sector_page_index, status_t::add_key, add_status_t::add_terminator_key);
       }
     } break;
 
       // Добавление символа-терминатора в конец, если он не был добавлен в предыдущем состоянии
     case add_status_t::add_terminator_key: {
-      IRS_ASSERT(m_current_sector_page + 1 < m_info_sector_size_pages);
-      for (uint8_t& i : m_page_buffer) {
-          i = m_data_sector_default_value_byte;
-      }
       *reinterpret_cast<K*>(m_page_buffer.data()) = m_terminator_key;
-      write_page(m_current_sector_page + 1, status_t::add_ended);
+      write_page(m_current_sector_page_index + 1, status_t::add_ended);
     } break;
   }
 }
@@ -396,31 +401,34 @@ void eeprom_safe_map_t<K, V>::write_page(
 template<class K, class V>
 void eeprom_safe_map_t<K, V>::page_mem_tick()
 {
-  if (mp_page->ready()) {
-    switch (m_page_mem_op) {
-      case page_mem_op_t::read: {
-        mp_page->read_page(m_page_buffer.data(), m_page_mem_page_index);
-        m_page_mem_op = page_mem_op_t::end_op;
-      } break;
-      case page_mem_op_t::write: {
-        mp_page->write_page(m_page_buffer.data(), m_page_mem_page_index);
-        m_page_mem_op = page_mem_op_t::end_op;
-      } break;
-      case page_mem_op_t::end_op: {
-        m_status = m_next_status;
-        m_add_status = m_next_add_status;
-      } break;
-    }
+  switch (m_page_mem_op) {
+    case page_mem_op_t::free: {
+    } break;
+    case page_mem_op_t::read: {
+      mp_page->read_page(m_page_buffer.data(), m_page_mem_page_index);
+      m_page_mem_op = page_mem_op_t::wait;
+    } break;
+    case page_mem_op_t::write: {
+      mp_page->write_page(m_page_buffer.data(), m_page_mem_page_index);
+      m_page_mem_op = page_mem_op_t::wait;
+    } break;
+    case page_mem_op_t::wait: {
+      m_status = m_next_status;
+      m_add_status = m_next_add_status;
+      m_next_status = status_t::free;
+      m_next_add_status = add_status_t::free;
+      m_page_mem_op = page_mem_op_t::free;
+    } break;
   }
 }
 
 template<class K, class V>
-void eeprom_safe_map_t<K, V>::change_key(const K& a_key, action_t a_action_status)
+void eeprom_safe_map_t<K, V>::change_key(const K& a_key, action_status_t a_action_status)
 {
-  m_status = status_t::find_current_key;
+  m_status = status_t::find_actual_value;
   m_current_key = a_key;
-  m_current_sector_page = 0;
-  m_current_value_index = 0;
+  m_current_sector_page_index = 0;
+  m_current_sector_index = 0;
   m_action_status = a_action_status;
 }
 
@@ -438,14 +446,14 @@ void eeprom_safe_map_t<K, V>::reset()
   }
   m_keys_count = 0;
   m_keys.clear();
-  change_key(m_current_key, action_t::write_value);
+  change_key(m_current_key, action_status_t::write_value);
 }
 
 template<class K, class V>
 void eeprom_safe_map_t<K, V>::evaluate_info_sector_size(uint32_t a_free_page_count)
 {
   m_keys_per_page = m_page_size / m_bytes_per_key;
-  m_values_per_page = m_page_size / (m_bytes_per_value + m_bytes_per_value_index);
+  m_values_per_page = m_page_size / (m_bytes_per_value + m_bytes_per_page_index);
   // p_vk = values_per_page / keys_per_page - кол-во страниц ключей для хранения ячеек значений,
   // которые помещаются на одной странице (Если на странице помещается 20 ячеек значений, а ключей
   // только 8, то потребуется 2,5 страницы с ключами, чтобы хранить 20 ячеек значений)
@@ -499,14 +507,14 @@ template<class K, class V>
 uint8_t eeprom_safe_map_t<K, V>::read_index(uint32_t a_value_cell)
 {
   return *reinterpret_cast<uint8_t*>(
-    m_page_buffer.data() + m_page_size - m_bytes_per_value_index * (a_value_cell + 1));
+    m_page_buffer.data() + m_page_size - m_bytes_per_page_index * (a_value_cell + 1));
 }
 
 template<class K, class V>
 void eeprom_safe_map_t<K, V>::write_index(uint32_t a_value_cell, uint8_t a_index)
 {
   *reinterpret_cast<uint8_t*>(
-    m_page_buffer.data() + m_page_size - m_bytes_per_value_index * (a_value_cell + 1)) = a_index;
+    m_page_buffer.data() + m_page_size - m_bytes_per_page_index * (a_value_cell + 1)) = a_index;
 }
 
 template<class K, class V>
@@ -627,7 +635,7 @@ std::array<uint8_t, 16> eeprom_safe_map_t<K, V>::get_idents_index_sect(
       page.data(), m_info_sector_size_pages + a_sect * m_data_sector_size_pages + i);
     mp_debug_page->tick();
     result[i] = *reinterpret_cast<uint8_t*>(
-      page.data() + m_page_size - m_bytes_per_value_index * (a_value_cell + 1));
+      page.data() + m_page_size - m_bytes_per_page_index * (a_value_cell + 1));
   }
   return result;
 }

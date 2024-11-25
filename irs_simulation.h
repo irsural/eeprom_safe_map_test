@@ -6,6 +6,8 @@
 using namespace std;
 using namespace std::chrono;
 
+#define IRS_ASSERT(pred) if (!(pred)) while(true);
+
 namespace irs {
     uint32_t make_cnt_s(uint32_t a_seconds);
 

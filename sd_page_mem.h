@@ -8,6 +8,8 @@
 #include <vector>
 #include <string>
 
+#include "irs_simulation.h"
+
 #define FREE_SPACE_BYTES static_cast<uint32_t>(1 << 11)
 
 using namespace std;

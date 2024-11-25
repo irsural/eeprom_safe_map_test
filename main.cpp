@@ -37,11 +37,11 @@ int main() {
     init_eeprom_txt();
 #endif
     eeprom_safe_map_t<combination_t, uint32_t> m_eeprom_safe_map(new sd_page_mem_t(page_count, page_size_bytes), eeprom_size_bytes, 8,
-                                                                 { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f }, 0);
+                                                                 { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f });
     oper_time_t m_oper_time(&m_eeprom_safe_map, 1, { 0, 0, 0, 0, 0, 0, 0, 0 }, true);
 //    m_oper_time.reset_all();
 
-    irs::timer_t timer(irs::make_cnt_s(3));
+    irs::timer_t timer(irs::make_cnt_s(5));
     combination_t combination {1, 1, 1, 1, 1, 1, 1, 0};
     bool combination_changed = false;
 
@@ -53,7 +53,7 @@ int main() {
         }
         m_oper_time.tick();
         if (timer.check()) {
-            combination[7] = (combination[7] + 1) % 3;
+            combination[7] = (combination[7] + 1) % 2;
             combination_changed = true;
             timer.start();
         }
