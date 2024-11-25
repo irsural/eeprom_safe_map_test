@@ -1,7 +1,0 @@
-# ninja log v5
-303	353	1726750070499342616	test_eeprom_pc	7eef0b21aa153359
-0	303	1726750070451343400	CMakeFiles/test_eeprom_pc.dir/main.cpp.o	77b9d29d68a7832a
-1	303	1726750070451343400	CMakeFiles/test_eeprom_pc.dir/oper_time.cpp.o	186b23cb4704528f
-0	235	1726739613163744791	CMakeFiles/test_eeprom_pc.dir/sd_page_mem.cpp.o	d32bccdb944d40e7
-1	306	1726750109306709393	CMakeFiles/test_eeprom_pc.dir/main.cpp.o	77b9d29d68a7832a
-306	356	1726750109358708546	test_eeprom_pc	7eef0b21aa153359

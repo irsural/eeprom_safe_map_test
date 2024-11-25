@@ -1,3 +1,0 @@
-/home/u516/repos/test_eeprom_pc/cmake-build-debug/CMakeFiles/test_eeprom_pc.dir
-/home/u516/repos/test_eeprom_pc/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/u516/repos/test_eeprom_pc/cmake-build-debug/CMakeFiles/rebuild_cache.dir
