@@ -36,7 +36,7 @@ int main() {
 #ifdef INIT
     init_eeprom_txt();
 #endif
-    eeprom_safe_map_t<combination_t, uint32_t> m_eeprom_safe_map(new sd_page_mem_t(page_count, page_size_bytes), eeprom_size_bytes, 8,
+    eeprom_safe_map_t<combination_t, uint32_t> m_eeprom_safe_map(new sd_page_mem_t(page_count, page_size_bytes), 0, eeprom_size_bytes, 8,
                                                                  { 0, 0, 0, 0, 0, 0, 0, 0 }, { 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f });
     oper_time_t m_oper_time(&m_eeprom_safe_map, 1, { 0, 0, 0, 0, 0, 0, 0, 0 }, true);
 //    m_oper_time.reset_all();
