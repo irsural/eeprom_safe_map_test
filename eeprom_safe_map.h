@@ -31,7 +31,7 @@ public:
     bool get_value(const K &a_key, V &a_value);
     /// \brief Заменяет ключ a_old_key на a_new_key с новым значением a_value
     /// \details Если замена идет на уже существующий ключ, то эта функция аналогична функции set_value
-    bool replace_key(const K &a_old_key, const K &a_new_key, V &a_value);
+    void replace_key(const K &a_old_key, const K &a_new_key, V &a_value);
     void tick();
     void add_key();
     bool ready();
@@ -45,6 +45,7 @@ private:
         add_ended,
         find_current_value,
         override_key,
+        wait_override,
         write_value,
         wait_page_mem
     };
@@ -70,7 +71,7 @@ private:
     static const uint32_t m_bytes_per_key = sizeof(K);
     static const uint32_t m_bytes_per_value = sizeof(V);
     static const uint32_t m_bytes_per_value_index = 1;
-    static const uint8_t m_data_sector_default_value_byte = 0xff;
+    const uint8_t m_data_sector_default_value_byte = 0xff;
 
     irs::page_mem_t *mp_page;
     uint32_t m_data_sector_size_pages;
@@ -200,7 +201,7 @@ bool eeprom_safe_map_t<K, V>::get_value(const K &a_key, V &a_value) {
 }
 
 template<class K, class V>
-bool eeprom_safe_map_t<K, V>::replace_key(const K &a_old_key, const K &a_new_key, V &a_value) {
+void eeprom_safe_map_t<K, V>::replace_key(const K &a_old_key, const K &a_new_key, V &a_value) {
     IRS_ASSERT(ready());
     if (std::find(m_keys.begin(), m_keys.end(), a_new_key) != m_keys.end()) {
         set_value(a_new_key, a_value);
