@@ -29,6 +29,8 @@ public:
     /// \return Если возвращается false, то закончилось место для ключей
     bool set_value(const K &a_key, V &a_value);
     bool get_value(const K &a_key, V &a_value);
+    /// \brief Заменяет ключ a_old_key на a_new_key с новым значением a_value
+    /// \details Если замена идет на уже существующий ключ, то эта функция аналогична функции set_value
     bool replace_key(const K &a_old_key, const K &a_new_key, V &a_value);
     void tick();
     void add_key();
@@ -42,6 +44,7 @@ private:
         add_key,
         add_ended,
         find_current_value,
+        override_key,
         write_value,
         wait_page_mem
     };
@@ -55,7 +58,8 @@ private:
     enum class action_t {
         none,
         read_value,
-        write_value
+        write_value,
+        replace_key
     };
     enum class page_mem_op_t {
         read,
@@ -74,6 +78,7 @@ private:
     std::vector<uint8_t> m_page_buffer;
     const K m_terminator_key;
     K m_current_key;
+    K m_new_key;
     V m_current_value;
     V m_new_value;
     uint32_t m_current_sector;
@@ -92,6 +97,7 @@ private:
     uint32_t m_info_sector_size_pages;
     uint32_t m_data_max_sectors_count;
     std::vector<K> m_keys;
+    uint32_t m_current_key_index;
     V *mp_buf_to_save_value;
     page_mem_op_t m_page_mem_op;
     uint32_t m_page_mem_page_index;
@@ -131,6 +137,7 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(irs::page_mem_t *ap_page, uint32_t a_
                                                                         m_page_buffer(m_page_size),
                                                                         m_terminator_key(a_terminator_key),
                                                                         m_current_key(a_default_key),
+                                                                        m_new_key(a_default_key),
                                                                         m_current_value{},
                                                                         m_new_value(),
                                                                         m_current_sector(0),
@@ -148,6 +155,7 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(irs::page_mem_t *ap_page, uint32_t a_
                                                                         m_keys_per_page(0),
                                                                         m_info_sector_size_pages(0),
                                                                         m_data_max_sectors_count(0),
+                                                                        m_current_key_index(0),
                                                                         mp_buf_to_save_value(nullptr),
                                                                         m_page_mem_op(),
                                                                         m_page_mem_page_index(0),
@@ -194,7 +202,13 @@ bool eeprom_safe_map_t<K, V>::get_value(const K &a_key, V &a_value) {
 template<class K, class V>
 bool eeprom_safe_map_t<K, V>::replace_key(const K &a_old_key, const K &a_new_key, V &a_value) {
     IRS_ASSERT(ready());
-    auto it = std::find(m_keys.begin(), m_keys.end(), a_new_key);
+    if (std::find(m_keys.begin(), m_keys.end(), a_new_key) != m_keys.end()) {
+        set_value(a_new_key, a_value);
+    } else {
+        m_new_key = a_new_key;
+        m_new_value = a_value;
+        change_key(a_old_key, action_t::replace_key);
+    }
 }
 
 template<class K, class V>
@@ -210,11 +224,12 @@ void eeprom_safe_map_t<K, V>::tick() {
             if (it == m_keys.end()) {
                 m_status = status_t::add_key;
                 m_add_status = add_status_t::update_info;
+                m_current_key_index = m_keys_count;
             } else {
                 // Запись была найдена
-                auto key_index = std::distance(m_keys.begin(), it);
-                m_current_sector = key_index % m_data_max_sectors_count;
-                m_current_value_cell = key_index / m_data_max_sectors_count;
+                m_current_key_index = std::distance(m_keys.begin(), it);
+                m_current_sector = m_current_key_index % m_data_max_sectors_count;
+                m_current_value_cell = m_current_key_index / m_data_max_sectors_count;
                 read_page(get_data_sector_start_page(m_current_sector), status_t::find_current_value);
             }
         } break;
@@ -267,9 +282,22 @@ void eeprom_safe_map_t<K, V>::tick() {
                         read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
                                   status_t::write_value);
                     } break;
+                    case action_t::replace_key: {
+                        read_page(m_current_key_index / m_keys_per_page, status_t::override_key);
+                    } break;
                 }
                 m_action_status = action_t::none;
             }
+        } break;
+
+        case status_t::override_key: {
+            write_key(m_current_key_index % m_keys_per_page, m_new_key);
+            write_page(m_current_key_index / m_keys_per_page, status_t::wait_override);
+        } break;
+
+        case status_t::wait_override: {
+            read_page(get_data_sector_start_page(m_current_sector) + m_current_sector_page,
+                      status_t::write_value);
         } break;
 
             // Запись новой ячейки значения в следующую страницу сектора
