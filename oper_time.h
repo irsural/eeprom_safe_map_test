@@ -31,6 +31,7 @@ private:
     idle,
     read_time,
     write_time,
+    find_least_time,
     wait_action_end,
   };
 
@@ -39,6 +40,10 @@ private:
   bool m_is_enabled;
   combination_t m_combination;
   uint32_t m_combination_time;
+  uint32_t m_least_time;
+  uint32_t m_tmp_time;
+  uint32_t m_least_time_index;
+  uint32_t m_key_index;
 
   // Задержка записи в eeprom в периодах инкрементирования
   uint32_t m_save_time_period_min;

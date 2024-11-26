@@ -36,6 +36,8 @@ public:
     void add_key();
     bool ready();
     void reset();
+    [[nodiscard]] uint32_t get_keys_count() const;
+    [[nodiscard]] K get_key(uint32_t a_index) const;
 
 private:
     enum class status_t {
@@ -449,6 +451,18 @@ void eeprom_safe_map_t<K, V>::reset() {
     m_keys_count = 0;
     m_keys.clear();
     change_key(m_current_key, action_t::write_value);
+}
+
+template<class K, class V>
+uint32_t eeprom_safe_map_t<K, V>::get_keys_count() const
+{
+    return m_keys_count;
+}
+
+template<class K, class V>
+K eeprom_safe_map_t<K, V>::get_key(uint32_t a_index) const
+{
+    return m_keys[a_index];
 }
 
 template<class K, class V>
