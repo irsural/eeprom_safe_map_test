@@ -10,6 +10,9 @@
 
 #include "irs_simulation.h"
 
+const uint32_t irs_st_ready = 1;
+const uint32_t irs_st_busy = 0;
+
 #define FREE_SPACE_BYTES static_cast<uint32_t>(1 << 11)
 
 using namespace std;
@@ -24,6 +27,7 @@ public:
   [[nodiscard]] size_type page_size() const;
   [[nodiscard]] uint32_t page_count() const;
   [[nodiscard]] bool ready() const;
+  [[nodiscard]] uint32_t status() const;
   void tick();
   [[nodiscard]] uint8_t error() const;
   [[nodiscard]] uint32_t start_page() const;
