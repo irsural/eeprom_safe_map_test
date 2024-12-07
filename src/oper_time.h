@@ -10,7 +10,7 @@ using combination_t = std::array<uint8_t, 8>;
 class oper_time_t
 {
 public:
-  /// \param a_no_save_time_periods Время задержки сохранения в eeprom
+  /// \param a_no_save_time_periods Р’СЂРµРјСЏ Р·Р°РґРµСЂР¶РєРё СЃРѕС…СЂР°РЅРµРЅРёСЏ РІ eeprom
   explicit oper_time_t(eeprom_safe_map_t<combination_t, uint32_t>* ap_eeprom_safe_map,
     int a_save_time_period_min, const combination_t& a_start_combination, bool a_enable = false);
   void set_enabled(bool a_enable);
@@ -22,7 +22,7 @@ public:
   [[nodiscard]] bool ready() const;
 
 private:
-  // Период между инкрементированием таймера в минутах
+  // РџРµСЂРёРѕРґ РјРµР¶РґСѓ РёРЅРєСЂРµРјРµРЅС‚РёСЂРѕРІР°РЅРёРµРј С‚Р°Р№РјРµСЂР° РІ РјРёРЅСѓС‚Р°С…
   static const int m_work_timer_period_m = 1;
 
   static const uint32_t m_default_combination_time = 0;
@@ -45,7 +45,7 @@ private:
   uint32_t m_least_time_index;
   uint32_t m_key_index;
 
-  // Задержка записи в eeprom в периодах инкрементирования
+  // Р—Р°РґРµСЂР¶РєР° Р·Р°РїРёСЃРё РІ eeprom РІ РїРµСЂРёРѕРґР°С… РёРЅРєСЂРµРјРµРЅС‚РёСЂРѕРІР°РЅРёСЏ
   uint32_t m_save_time_period_min;
 
   irs::timer_t m_delay_timer;

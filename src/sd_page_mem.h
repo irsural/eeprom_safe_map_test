@@ -43,8 +43,8 @@ private:
   uint32_t m_page_index;
   sd_page_mem_state_t m_status;
 
-  /// \details 0 - без ошибок
-  /// \details 1 - выход за пределы разрешенных страниц
+  /// \details 0 - Р±РµР· РѕС€РёР±РѕРє
+  /// \details 1 - РІС‹С…РѕРґ Р·Р° РїСЂРµРґРµР»С‹ СЂР°Р·СЂРµС€РµРЅРЅС‹С… СЃС‚СЂР°РЅРёС†
   uint8_t m_error_status;
   size_t m_page_count;
   size_t m_page_size;

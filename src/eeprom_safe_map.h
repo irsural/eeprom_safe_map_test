@@ -7,30 +7,30 @@
 #include <irsmem.h>
 #include <vector>
 
-/// \brief Класс для записи значений в eeprom
-/// \details Записывает значения в eeprom с экономией ресурса памяти
-/// \details Для корректной работы при первом использовании вызвать функцию reset
-/// \param K - тип данных для ключа
-/// \param V - тип данных для значения
+/// \brief РљР»Р°СЃСЃ РґР»СЏ Р·Р°РїРёСЃРё Р·РЅР°С‡РµРЅРёР№ РІ eeprom
+/// \details Р—Р°РїРёСЃС‹РІР°РµС‚ Р·РЅР°С‡РµРЅРёСЏ РІ eeprom СЃ СЌРєРѕРЅРѕРјРёРµР№ СЂРµСЃСѓСЂСЃР° РїР°РјСЏС‚Рё
+/// \details Р”Р»СЏ РєРѕСЂСЂРµРєС‚РЅРѕР№ СЂР°Р±РѕС‚С‹ РїСЂРё РїРµСЂРІРѕРј РёСЃРїРѕР»СЊР·РѕРІР°РЅРёРё РІС‹Р·РІР°С‚СЊ С„СѓРЅРєС†РёСЋ reset
+/// \param K - С‚РёРї РґР°РЅРЅС‹С… РґР»СЏ РєР»СЋС‡Р°
+/// \param V - С‚РёРї РґР°РЅРЅС‹С… РґР»СЏ Р·РЅР°С‡РµРЅРёСЏ
 template<class K, class V>
 class eeprom_safe_map_t {
 public:
-    /// \param a_page_offset Страница, с которой начинать запись в eeprom
-    /// \param a_free_pages Кол-во свободных страниц
-    /// \param a_data_sect_size_pages Размер сектора данных в страницах
-    /// \param a_default_key Ключ, который будет использоваться по умолчанию.
-    /// \param a_terminator_key Ключ, который будет терминатором списка ключей.
+    /// \param a_page_offset РЎС‚СЂР°РЅРёС†Р°, СЃ РєРѕС‚РѕСЂРѕР№ РЅР°С‡РёРЅР°С‚СЊ Р·Р°РїРёСЃСЊ РІ eeprom
+    /// \param a_free_pages РљРѕР»-РІРѕ СЃРІРѕР±РѕРґРЅС‹С… СЃС‚СЂР°РЅРёС†
+    /// \param a_data_sect_size_pages Р Р°Р·РјРµСЂ СЃРµРєС‚РѕСЂР° РґР°РЅРЅС‹С… РІ СЃС‚СЂР°РЅРёС†Р°С…
+    /// \param a_default_key РљР»СЋС‡, РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ.
+    /// \param a_terminator_key РљР»СЋС‡, РєРѕС‚РѕСЂС‹Р№ Р±СѓРґРµС‚ С‚РµСЂРјРёРЅР°С‚РѕСЂРѕРј СЃРїРёСЃРєР° РєР»СЋС‡РµР№.
     explicit eeprom_safe_map_t(irs::page_mem_t *ap_page, uint32_t a_page_offset, size_t a_free_pages,
                                uint32_t a_data_sect_size_pages, const K &a_default_key, const K &a_terminator_key);
 
-    /// \brief Установить значения для выбранного ключа
-    /// \details Если сектора с таким ключом нет, то такой сектор будет создан
-    /// \param a_key Искомый ключ
-    /// \return Если возвращается false, то закончилось место для ключей
+    /// \brief РЈСЃС‚Р°РЅРѕРІРёС‚СЊ Р·РЅР°С‡РµРЅРёСЏ РґР»СЏ РІС‹Р±СЂР°РЅРЅРѕРіРѕ РєР»СЋС‡Р°
+    /// \details Р•СЃР»Рё СЃРµРєС‚РѕСЂР° СЃ С‚Р°РєРёРј РєР»СЋС‡РѕРј РЅРµС‚, С‚Рѕ С‚Р°РєРѕР№ СЃРµРєС‚РѕСЂ Р±СѓРґРµС‚ СЃРѕР·РґР°РЅ
+    /// \param a_key РСЃРєРѕРјС‹Р№ РєР»СЋС‡
+    /// \return Р•СЃР»Рё РІРѕР·РІСЂР°С‰Р°РµС‚СЃСЏ false, С‚Рѕ Р·Р°РєРѕРЅС‡РёР»РѕСЃСЊ РјРµСЃС‚Рѕ РґР»СЏ РєР»СЋС‡РµР№
     bool set_value(const K &a_key, V &a_value);
     bool get_value(const K &a_key, V &a_value);
-    /// \brief Заменяет ключ a_old_key на a_new_key с новым значением a_value
-    /// \details Если замена идет на уже существующий ключ, то эта функция аналогична функции set_value
+    /// \brief Р—Р°РјРµРЅСЏРµС‚ РєР»СЋС‡ a_old_key РЅР° a_new_key СЃ РЅРѕРІС‹Рј Р·РЅР°С‡РµРЅРёРµРј a_value
+    /// \details Р•СЃР»Рё Р·Р°РјРµРЅР° РёРґРµС‚ РЅР° СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РєР»СЋС‡, С‚Рѕ СЌС‚Р° С„СѓРЅРєС†РёСЏ Р°РЅР°Р»РѕРіРёС‡РЅР° С„СѓРЅРєС†РёРё set_value
     void replace_key(const K &a_old_key, const K &a_new_key, V &a_value);
     void tick();
     void add_key();
@@ -106,8 +106,8 @@ private:
     uint32_t m_page_mem_page_index;
     uint32_t m_page_offset;
 
-    /// \details Ассинхронно читает и пишет в номера страниц, относительно стартовой страницы,
-    /// используя внутренний буффер
+    /// \details РђСЃСЃРёРЅС…СЂРѕРЅРЅРѕ С‡РёС‚Р°РµС‚ Рё РїРёС€РµС‚ РІ РЅРѕРјРµСЂР° СЃС‚СЂР°РЅРёС†, РѕС‚РЅРѕСЃРёС‚РµР»СЊРЅРѕ СЃС‚Р°СЂС‚РѕРІРѕР№ СЃС‚СЂР°РЅРёС†С‹,
+    /// РёСЃРїРѕР»СЊР·СѓСЏ РІРЅСѓС‚СЂРµРЅРЅРёР№ Р±СѓС„С„РµСЂ
     void read_page(uint32_t a_page_index, status_t a_next_status,
                    add_status_t a_next_add_status = add_status_t::update_info);
     void write_page(uint32_t a_page_index, status_t a_next_status,
@@ -120,7 +120,7 @@ private:
 
     uint32_t get_data_sector_start_page(uint32_t a_sector);
 
-    // Функции, которые работают с m_page_buffer
+    // Р¤СѓРЅРєС†РёРё, РєРѕС‚РѕСЂС‹Рµ СЂР°Р±РѕС‚Р°СЋС‚ СЃ m_page_buffer
     uint8_t read_index(uint32_t a_value_cell);
     void write_index(uint32_t a_value_cell, uint8_t a_index);
     uint8_t read_value(uint32_t a_value_cell);
@@ -163,14 +163,14 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(irs::page_mem_t *ap_page, uint32_t a_
                                                                         m_page_mem_op(),
                                                                         m_page_mem_page_index(0),
                                                                         m_page_offset(a_page_offset) {
-    // Максимальный индекс должен быть на 1 больше количества страниц для работы алгоритма обнаружения
-    // актуального сектора
+    // РњР°РєСЃРёРјР°Р»СЊРЅС‹Р№ РёРЅРґРµРєСЃ РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РЅР° 1 Р±РѕР»СЊС€Рµ РєРѕР»РёС‡РµСЃС‚РІР° СЃС‚СЂР°РЅРёС† РґР»СЏ СЂР°Р±РѕС‚С‹ Р°Р»РіРѕСЂРёС‚РјР° РѕР±РЅР°СЂСѓР¶РµРЅРёСЏ
+    // Р°РєС‚СѓР°Р»СЊРЅРѕРіРѕ СЃРµРєС‚РѕСЂР°
     IRS_ASSERT(m_data_sector_size_pages < 255);
     clear_page_buffer();
     evaluate_info_sector_size(a_free_pages);
     get_keys();
 
-    // Получение текущего значения
+    // РџРѕР»СѓС‡РµРЅРёРµ С‚РµРєСѓС‰РµРіРѕ Р·РЅР°С‡РµРЅРёСЏ
     change_key(m_current_key, action_t::none);
 }
 
@@ -223,13 +223,13 @@ void eeprom_safe_map_t<K, V>::tick() {
 
         case status_t::find_current_key: {
             auto it = std::find(m_keys.begin(), m_keys.end(), m_current_key);
-            // Запись не была найдена
+            // Р—Р°РїРёСЃСЊ РЅРµ Р±С‹Р»Р° РЅР°Р№РґРµРЅР°
             if (it == m_keys.end()) {
                 m_status = status_t::add_key;
                 m_add_status = add_status_t::update_info;
                 m_current_key_index = m_keys_count;
             } else {
-                // Запись была найдена
+                // Р—Р°РїРёСЃСЊ Р±С‹Р»Р° РЅР°Р№РґРµРЅР°
                 m_current_key_index = std::distance(m_keys.begin(), it);
                 m_current_sector = m_current_key_index % m_data_max_sectors_count;
                 m_current_value_cell = m_current_key_index / m_data_max_sectors_count;
@@ -237,7 +237,7 @@ void eeprom_safe_map_t<K, V>::tick() {
             }
         } break;
 
-            // Статус добавления разделен на подстатусы
+            // РЎС‚Р°С‚СѓСЃ РґРѕР±Р°РІР»РµРЅРёСЏ СЂР°Р·РґРµР»РµРЅ РЅР° РїРѕРґСЃС‚Р°С‚СѓСЃС‹
         case status_t::add_key: {
             add_key();
         } break;
@@ -248,7 +248,7 @@ void eeprom_safe_map_t<K, V>::tick() {
             read_page(get_data_sector_start_page(m_current_sector), status_t::write_value);
         } break;
 
-            // Поиск последней записи значения
+            // РџРѕРёСЃРє РїРѕСЃР»РµРґРЅРµР№ Р·Р°РїРёСЃРё Р·РЅР°С‡РµРЅРёСЏ
         case status_t::find_current_value: {
             uint8_t value_index = read_index(m_current_value_cell);
             bool no_jump = value_index == (m_current_value_index + 1) % (m_data_sector_size_pages + 1);
@@ -303,7 +303,7 @@ void eeprom_safe_map_t<K, V>::tick() {
                       status_t::write_value);
         } break;
 
-            // Запись новой ячейки значения в следующую страницу сектора
+            // Р—Р°РїРёСЃСЊ РЅРѕРІРѕР№ СЏС‡РµР№РєРё Р·РЅР°С‡РµРЅРёСЏ РІ СЃР»РµРґСѓСЋС‰СѓСЋ СЃС‚СЂР°РЅРёС†Сѓ СЃРµРєС‚РѕСЂР°
         case status_t::write_value: {
             write_value(m_current_value_cell, m_new_value);
             write_index(m_current_value_cell, m_current_value_index);
@@ -329,11 +329,11 @@ void eeprom_safe_map_t<K, V>::add_key() {
             m_current_sector = (m_keys_count - 1) % m_data_max_sectors_count;
             m_current_value_cell = (m_keys_count - 1) / m_data_max_sectors_count;
 
-            // Если места под новый сектор нет, то значение будет храниться в уже существующем
+            // Р•СЃР»Рё РјРµСЃС‚Р° РїРѕРґ РЅРѕРІС‹Р№ СЃРµРєС‚РѕСЂ РЅРµС‚, С‚Рѕ Р·РЅР°С‡РµРЅРёРµ Р±СѓРґРµС‚ С…СЂР°РЅРёС‚СЊСЃСЏ РІ СѓР¶Рµ СЃСѓС‰РµСЃС‚РІСѓСЋС‰РµРј
             if (m_keys_count > m_data_max_sectors_count) {
                 m_add_status = add_status_t::add_key_prep;
             } else {
-                // Добавление сектора, заполнение его значением m_data_sector_default_value_byte
+                // Р”РѕР±Р°РІР»РµРЅРёРµ СЃРµРєС‚РѕСЂР°, Р·Р°РїРѕР»РЅРµРЅРёРµ РµРіРѕ Р·РЅР°С‡РµРЅРёРµРј m_data_sector_default_value_byte
                 clear_page_buffer();
                 m_current_sector_page = 0;
                 m_add_status = add_status_t::add_data_sector;
@@ -351,19 +351,19 @@ void eeprom_safe_map_t<K, V>::add_key() {
             }
         } break;
 
-            // Копируется страница, в которую будет добавлена запись
+            // РљРѕРїРёСЂСѓРµС‚СЃСЏ СЃС‚СЂР°РЅРёС†Р°, РІ РєРѕС‚РѕСЂСѓСЋ Р±СѓРґРµС‚ РґРѕР±Р°РІР»РµРЅР° Р·Р°РїРёСЃСЊ
         case add_status_t::add_key_prep: {
-            // -1 для перевода из кол-ва в индекс
+            // -1 РґР»СЏ РїРµСЂРµРІРѕРґР° РёР· РєРѕР»-РІР° РІ РёРЅРґРµРєСЃ
             m_current_sector_page = (m_keys_count - 1) / m_keys_per_page;
             read_page(m_current_sector_page, status_t::add_key, add_status_t::add_key);
         } break;
 
-            // Вставка измененной страницы, которая была взята на предыдущем шаге
+            // Р’СЃС‚Р°РІРєР° РёР·РјРµРЅРµРЅРЅРѕР№ СЃС‚СЂР°РЅРёС†С‹, РєРѕС‚РѕСЂР°СЏ Р±С‹Р»Р° РІР·СЏС‚Р° РЅР° РїСЂРµРґС‹РґСѓС‰РµРј С€Р°РіРµ
         case add_status_t::add_key: {
-            // m_keys_count - m_notes_per_page * m_current_sector_page - 1 = номер
-            // записи в текущей странице
+            // m_keys_count - m_notes_per_page * m_current_sector_page - 1 = РЅРѕРјРµСЂ
+            // Р·Р°РїРёСЃРё РІ С‚РµРєСѓС‰РµР№ СЃС‚СЂР°РЅРёС†Рµ
             write_key(m_keys_count - m_keys_per_page * m_current_sector_page - 1, m_current_key);
-            // Проверка на наличие места для ключа-терминатора в текущей странице
+            // РџСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РјРµСЃС‚Р° РґР»СЏ РєР»СЋС‡Р°-С‚РµСЂРјРёРЅР°С‚РѕСЂР° РІ С‚РµРєСѓС‰РµР№ СЃС‚СЂР°РЅРёС†Рµ
             if (m_keys_count / m_keys_per_page == m_current_sector_page) {
                 write_key(m_keys_count - m_keys_per_page * m_current_sector_page, m_terminator_key);
                 write_page(m_current_sector_page, status_t::add_ended);
@@ -372,7 +372,7 @@ void eeprom_safe_map_t<K, V>::add_key() {
             }
         } break;
 
-            // Добавление символа-терминатора в конец, если он не был добавлен в предыдущем состоянии
+            // Р”РѕР±Р°РІР»РµРЅРёРµ СЃРёРјРІРѕР»Р°-С‚РµСЂРјРёРЅР°С‚РѕСЂР° РІ РєРѕРЅРµС†, РµСЃР»Рё РѕРЅ РЅРµ Р±С‹Р» РґРѕР±Р°РІР»РµРЅ РІ РїСЂРµРґС‹РґСѓС‰РµРј СЃРѕСЃС‚РѕСЏРЅРёРё
         case add_status_t::add_terminator_key: {
             IRS_ASSERT(m_current_sector_page + 1 < m_info_sector_size_pages);
             clear_page_buffer();
@@ -443,7 +443,7 @@ void eeprom_safe_map_t<K, V>::reset() {
     while (!is_page_ready()) {
         mp_page->tick();
     }
-    // Запись символа-терминатора на первую позицию для ключей
+    // Р—Р°РїРёСЃСЊ СЃРёРјРІРѕР»Р°-С‚РµСЂРјРёРЅР°С‚РѕСЂР° РЅР° РїРµСЂРІСѓСЋ РїРѕР·РёС†РёСЋ РґР»СЏ РєР»СЋС‡РµР№
     mp_page->write_page(m_page_buffer.data(), m_page_offset);
     while (!is_page_ready()) {
         mp_page->tick();
@@ -469,15 +469,15 @@ template<class K, class V>
 void eeprom_safe_map_t<K, V>::evaluate_info_sector_size(uint32_t a_free_page_count) {
     m_keys_per_page = m_page_size / m_bytes_per_key;
     m_values_per_page = m_page_size / (m_bytes_per_value + m_bytes_per_value_index);
-    // p_vk = values_per_page / keys_per_page - кол-во страниц ключей для хранения ячеек значений,
-    // которые помещаются на одной странице (Если на странице помещается 20 ячеек значений, а ключей
-    // только 8, то потребуется 2,5 страницы с ключами, чтобы хранить 20 ячеек значений)
+    // p_vk = values_per_page / keys_per_page - РєРѕР»-РІРѕ СЃС‚СЂР°РЅРёС† РєР»СЋС‡РµР№ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЏС‡РµРµРє Р·РЅР°С‡РµРЅРёР№,
+    // РєРѕС‚РѕСЂС‹Рµ РїРѕРјРµС‰Р°СЋС‚СЃСЏ РЅР° РѕРґРЅРѕР№ СЃС‚СЂР°РЅРёС†Рµ (Р•СЃР»Рё РЅР° СЃС‚СЂР°РЅРёС†Рµ РїРѕРјРµС‰Р°РµС‚СЃСЏ 20 СЏС‡РµРµРє Р·РЅР°С‡РµРЅРёР№, Р° РєР»СЋС‡РµР№
+    // С‚РѕР»СЊРєРѕ 8, С‚Рѕ РїРѕС‚СЂРµР±СѓРµС‚СЃСЏ 2,5 СЃС‚СЂР°РЅРёС†С‹ СЃ РєР»СЋС‡Р°РјРё, С‡С‚РѕР±С‹ С…СЂР°РЅРёС‚СЊ 20 СЏС‡РµРµРє Р·РЅР°С‡РµРЅРёР№)
     float key_pages_per_value_page =
             static_cast<float>(m_values_per_page) / static_cast<float>(m_keys_per_page);
-    // Для каждого сектора необходимо иметь p_vk страниц с ключами,
-    // сектор занимает data_sect_size_pages страниц. При оптимальном распределении получается
-    // уравнение: (p_vk + data_sect_size_pages) * k = p, где k - кол-во пар "страниц записи - сектор"
-    // или кол-во секторов данных. Выражается k: k = floor(p / (p_vk + data_sect_size_pages)).
+    // Р”Р»СЏ РєР°Р¶РґРѕРіРѕ СЃРµРєС‚РѕСЂР° РЅРµРѕР±С…РѕРґРёРјРѕ РёРјРµС‚СЊ p_vk СЃС‚СЂР°РЅРёС† СЃ РєР»СЋС‡Р°РјРё,
+    // СЃРµРєС‚РѕСЂ Р·Р°РЅРёРјР°РµС‚ data_sect_size_pages СЃС‚СЂР°РЅРёС†. РџСЂРё РѕРїС‚РёРјР°Р»СЊРЅРѕРј СЂР°СЃРїСЂРµРґРµР»РµРЅРёРё РїРѕР»СѓС‡Р°РµС‚СЃСЏ
+    // СѓСЂР°РІРЅРµРЅРёРµ: (p_vk + data_sect_size_pages) * k = p, РіРґРµ k - РєРѕР»-РІРѕ РїР°СЂ "СЃС‚СЂР°РЅРёС† Р·Р°РїРёСЃРё - СЃРµРєС‚РѕСЂ"
+    // РёР»Рё РєРѕР»-РІРѕ СЃРµРєС‚РѕСЂРѕРІ РґР°РЅРЅС‹С…. Р’С‹СЂР°Р¶Р°РµС‚СЃСЏ k: k = floor(p / (p_vk + data_sect_size_pages)).
     m_data_max_sectors_count = static_cast<uint32_t>(static_cast<float>(a_free_page_count) /
                                                      (key_pages_per_value_page + static_cast<float>(m_data_sector_size_pages)));
     m_info_sector_size_pages = static_cast<uint32_t>(
@@ -498,7 +498,7 @@ void eeprom_safe_map_t<K, V>::get_keys() {
         bool key_terminated_value_found = false;
         for (size_t j = 0; j < m_keys_per_page; ++j) {
             K tmp_value = read_key(j);
-            // Если найдено значение m_terminator_key, то это конец списка ключей
+            // Р•СЃР»Рё РЅР°Р№РґРµРЅРѕ Р·РЅР°С‡РµРЅРёРµ m_terminator_key, С‚Рѕ СЌС‚Рѕ РєРѕРЅРµС† СЃРїРёСЃРєР° РєР»СЋС‡РµР№
             if (tmp_value == m_terminator_key) {
                 key_terminated_value_found = true;
                 break;

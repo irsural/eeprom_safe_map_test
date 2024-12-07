@@ -74,7 +74,7 @@ void sd_page_mem_t::initialize_io_operation(
     mp_buffer = reinterpret_cast<uint8_t *>(ap_data);
     m_page_index = m_start_page + a_index;
     m_status = a_status;
-    /// Ïîïûòêà çàïèñè çà ïðåäåëàìè ðàçðåøåííûõ ñòðàíèö
+    /// ÐŸÐ¾Ð¿Ñ‹Ñ‚ÐºÐ° Ð·Ð°Ð¿Ð¸ÑÐ¸ Ð·Ð° Ð¿Ñ€ÐµÐ´ÐµÐ»Ð°Ð¼Ð¸ Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð½Ñ‹Ñ… ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†
     if (a_index > m_page_count - 1) {
         m_error_status = 1;
     }
