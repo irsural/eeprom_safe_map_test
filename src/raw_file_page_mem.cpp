@@ -1,21 +1,28 @@
 #include "raw_file_page_mem.h"
 
-raw_file_page_mem::raw_file_page_mem(size_t a_page_count, size_t a_page_size, size_t a_start_page) :
+#include <cassert>
+
+raw_file_page_mem::raw_file_page_mem(
+  const std::string& a_eeprom_filename, size_t a_page_count, size_t a_page_size, size_t a_start_page
+) :
   mp_buffer(nullptr),
   m_page_index(0),
   m_status(sd_page_mem_state_t::ready),
-  m_error_status(0),
   m_page_count(a_page_count),
   m_page_size(a_page_size),
-  m_start_page(a_start_page)
+  m_start_page(a_start_page),
+  m_eeprom_data(m_page_count)
 {
-  m_eeprom.resize(m_page_count);
-  m_ios.open(path);
-  for (int i = 0; i < m_page_count; ++i) {
-    m_eeprom[i].resize(m_page_size);
-    m_ios.get((char*)(m_eeprom[i].data()), m_page_size + 1);
+  std::ifstream eeprom_file(a_eeprom_filename, std::ios::binary | std::ios::in);
+
+  for (size_t i = 0; i < m_page_count; ++i) {
+    m_eeprom_data[i].resize(m_page_size);
+
+    eeprom_file.get(
+      reinterpret_cast<char*>(m_eeprom_data[i].data()),
+      static_cast<std::streamsize>(m_page_size + 1)
+    );
   }
-  m_ios.close();
 }
 
 void raw_file_page_mem::read_page(uint8_t* ap_buf, uint32_t a_index)
@@ -55,15 +62,15 @@ void raw_file_page_mem::tick()
     } break;
     case sd_page_mem_state_t::read: {
       for (int i = 0; i < m_page_size; ++i) {
-        mp_buffer[i] = m_eeprom[m_page_index][i];
+        mp_buffer[i] = m_eeprom_data[m_page_index][i];
       }
       m_status = sd_page_mem_state_t::ready;
     } break;
     case sd_page_mem_state_t::write: {
       for (int i = 0; i < m_page_size; ++i) {
-        m_eeprom[m_page_index][i] = mp_buffer[i];
+        m_eeprom_data[m_page_index][i] = mp_buffer[i];
       }
-      print_txt();
+      write_eeprom_file();
       m_status = sd_page_mem_state_t::ready;
     } break;
   }
@@ -71,7 +78,7 @@ void raw_file_page_mem::tick()
 
 uint8_t raw_file_page_mem::error() const
 {
-  return m_error_status;
+  return 0;
 }
 
 uint32_t raw_file_page_mem::start_page() const
@@ -83,22 +90,19 @@ void raw_file_page_mem::initialize_io_operation(
   uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status
 )
 {
-  mp_buffer = reinterpret_cast<uint8_t*>(ap_data);
+  assert(a_index < m_page_count);
+
+  mp_buffer = ap_data;
   m_page_index = m_start_page + a_index;
   m_status = a_status;
-  /// Попытка записи за пределами разрешенных страниц
-  if (a_index > m_page_count - 1) {
-    m_error_status = 1;
-  }
 }
 
-void raw_file_page_mem::print_txt()
+void raw_file_page_mem::write_eeprom_file()
 {
-  m_ios.open(path);
+  std::ofstream eeprom_file(m_eeprom_filename, std::ios::binary | std::ios::out);
   for (int i = 0; i < m_page_count; ++i) {
     for (int j = 0; j < m_page_size; ++j) {
-      m_ios << m_eeprom[i][j];
-        }
+      eeprom_file << m_eeprom_data[i][j];
     }
-    m_ios.close();
+  }
 }

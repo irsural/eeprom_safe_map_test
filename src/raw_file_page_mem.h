@@ -25,12 +25,17 @@ public:
   virtual irs_status_t status() const = 0;
   virtual void tick() = 0;
 };
-}
+} // namespace irs
 
 class raw_file_page_mem : public irs::page_mem_t
 {
 public:
-  explicit raw_file_page_mem(size_t a_page_count, size_t a_page_size, size_t a_start_page = 0);
+  explicit raw_file_page_mem(
+    const std::string& a_eeprom_filename,
+    size_t a_page_count,
+    size_t a_page_size,
+    size_t a_start_page = 0
+  );
   typedef size_t size_type;
   void read_page(uint8_t* ap_buf, uint32_t a_index);
   void write_page(const uint8_t* ap_buf, uint32_t a_index);
@@ -53,20 +58,15 @@ private:
   uint32_t m_page_index;
   sd_page_mem_state_t m_status;
 
-  /// \details 0 - без ошибок
-  /// \details 1 - выход за пределы разрешенных страниц
-  uint8_t m_error_status;
   size_t m_page_count;
   size_t m_page_size;
   size_t m_start_page;
 
-  const std::string path = "/home/u516/tmp/eeprom.txt";
-  std::fstream m_ios;
-
-  std::vector<std::vector<uint8_t>> m_eeprom;
+  std::string m_eeprom_filename;
+  std::vector<std::vector<uint8_t>> m_eeprom_data;
 
   void initialize_io_operation(uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status);
-  void print_txt();
+  void write_eeprom_file();
 };
 
 #endif // NOISE_GENERATOR_SD_PAGE_MEM_H
