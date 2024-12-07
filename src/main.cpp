@@ -24,13 +24,13 @@ int main()
 {
   const std::string eeprom_path = std::string(EEPROM_FILE);
   constexpr uint32_t page_size_bytes = 32;
-  constexpr uint32_t sector_size_pages = 16;
-  constexpr uint32_t pages_count = 10;
+  constexpr uint32_t sector_size_pages = 4;
+  constexpr uint32_t pages_count = 20;
 
   if (!std::filesystem::exists(eeprom_path)) {
     make_eeprom(eeprom_path, page_size_bytes, pages_count);
   }
 
-  page_mem_demo(eeprom_path, page_size_bytes, pages_count);
-  // safe_map_demo(eeprom_path, page_size_bytes, pages_count, sector_size_pages);
+  // page_mem_demo(eeprom_path, page_size_bytes, pages_count);
+  safe_map_demo(eeprom_path, page_size_bytes, pages_count, sector_size_pages);
 }

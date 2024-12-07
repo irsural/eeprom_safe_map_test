@@ -2,14 +2,13 @@
 #define NOISE_GENERATOR_EEPROM_SAFE_MAP_H
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <vector>
-#include <cassert>
+
 #include "raw_file_page_mem.h"
 
-
 #define IRS_ASSERT(pred) assert((pred))
-
 
 /// \brief Класс для записи значений в eeprom
 /// \details Записывает значения в eeprom с экономией ресурса памяти
@@ -38,7 +37,7 @@ public:
   /// \details Если сектора с таким ключом нет, то такой сектор будет создан
   /// \param a_key Искомый ключ
   /// \return Если возвращается false, то закончилось место для ключей
-  bool set_value(const K& a_key, V& a_value);
+  bool set_value(const K& a_key, const V& a_value);
   bool get_value(const K& a_key, V& a_value);
   /// \brief Заменяет ключ a_old_key на a_new_key с новым значением a_value
   /// \details Если замена идет на уже существующий ключ, то эта функция аналогична функции
@@ -48,6 +47,7 @@ public:
   void add_key();
   bool ready();
   void reset();
+  [[nodiscard]] uint32_t get_data_sectors_count() const;
   [[nodiscard]] uint32_t get_keys_count() const;
   [[nodiscard]] K get_key(uint32_t a_index) const;
 
@@ -194,6 +194,11 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(
   IRS_ASSERT(m_data_sector_size_pages < 255);
   clear_page_buffer();
   evaluate_info_sector_size(a_free_pages);
+
+  IRS_ASSERT(
+    m_page_offset + m_data_max_sectors_count * m_data_sector_size_pages <= mp_page->page_count()
+  );
+
   get_keys();
 
   // Получение текущего значения
@@ -201,7 +206,7 @@ eeprom_safe_map_t<K, V>::eeprom_safe_map_t(
 }
 
 template<class K, class V>
-bool eeprom_safe_map_t<K, V>::set_value(const K& a_key, V& a_value)
+bool eeprom_safe_map_t<K, V>::set_value(const K& a_key, const V& a_value)
 {
   IRS_ASSERT(ready());
   if (!has_key(a_key) && m_keys_count + 1 > m_max_keys_count) {
@@ -507,6 +512,12 @@ void eeprom_safe_map_t<K, V>::reset()
 }
 
 template<class K, class V>
+uint32_t eeprom_safe_map_t<K, V>::get_data_sectors_count() const
+{
+  return m_data_max_sectors_count;
+}
+
+template<class K, class V>
 uint32_t eeprom_safe_map_t<K, V>::get_keys_count() const
 {
   return m_keys_count;
@@ -537,6 +548,7 @@ void eeprom_safe_map_t<K, V>::evaluate_info_sector_size(uint32_t a_free_page_cou
     static_cast<float>(a_free_page_count) /
     (key_pages_per_value_page + static_cast<float>(m_data_sector_size_pages))
   );
+  IRS_ASSERT(m_data_max_sectors_count > 0);
   m_info_sector_size_pages = static_cast<uint32_t>(
     ceil(static_cast<float>(m_data_max_sectors_count) * key_pages_per_value_page)
   );

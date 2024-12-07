@@ -5,6 +5,14 @@
 
 #include "raw_file_page_mem.h"
 
+void wait_page_mem(irs::page_mem_t& page_mem)
+{
+  // Вызываем тики, пока все данные не запишутся в eeprom
+  while (page_mem.status() != irs_st_ready) {
+    page_mem.tick();
+  }
+}
+
 void page_mem_demo(const std::string& eeprom_path, uint32_t page_size_bytes, uint32_t pages_count)
 {
   raw_file_page_mem page_mem(eeprom_path, pages_count, page_size_bytes);
@@ -15,22 +23,14 @@ void page_mem_demo(const std::string& eeprom_path, uint32_t page_size_bytes, uin
     // Заполняем каждую страницу eeprom байтом - номером страницы
     memset(buf, static_cast<uint8_t>(i), page_size_bytes);
     page_mem.write_page(buf, i);
-
-    // Вызываем тики, пока все данные не запишутся в eeprom
-    while (page_mem.status() != irs_st_ready) {
-      page_mem.tick();
-    }
+    wait_page_mem(page_mem);
   }
 
   for (uint32_t i = 0; i < pages_count; ++i) {
     // Читаем все страницы
     memset(buf, 0, page_size_bytes);
     page_mem.read_page(buf, i);
-
-    // Вызываем тики, пока все данные не считаются из eeprom-a
-    while (page_mem.status() != irs_st_ready) {
-      page_mem.tick();
-    }
+    wait_page_mem(page_mem);
 
     // Выводим считанные данные
     for (uint32_t j = 0; j < page_size_bytes; ++j) {

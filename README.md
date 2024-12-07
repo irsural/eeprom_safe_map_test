@@ -8,4 +8,4 @@
 - page_mem_demo.h/cpp - демонстрация работы с eeprom (page memory, страничная память)
 - safe_map_demo.h/cpp - демонстрация работы с eeprom_safe_map_t
 
-
+Результаты работы page_mem и safe_map смотреть hex-редактором. В visual code есть удобный плагин для этого
