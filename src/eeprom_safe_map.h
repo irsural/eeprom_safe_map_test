@@ -3,9 +3,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <irsmem.h>
 #include <vector>
 #include <cassert>
+#include "sd_page_mem.h"
 
 
 #define IRS_ASSERT(pred) assert((pred))

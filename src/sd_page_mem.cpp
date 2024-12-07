@@ -1,6 +1,6 @@
 #include "sd_page_mem.h"
 
-sd_page_mem_t::sd_page_mem_t(size_t a_page_count, size_t a_page_size, size_t a_start_page) :
+raw_file_page_mem_t::raw_file_page_mem_t(size_t a_page_count, size_t a_page_size, size_t a_start_page) :
   mp_buffer(nullptr),
   m_page_index(0),
   m_status(sd_page_mem_state_t::ready),
@@ -18,37 +18,37 @@ sd_page_mem_t::sd_page_mem_t(size_t a_page_count, size_t a_page_size, size_t a_s
   m_ios.close();
 }
 
-void sd_page_mem_t::read_page(uint8_t* ap_buf, uint32_t a_index)
+void raw_file_page_mem_t::read_page(uint8_t* ap_buf, uint32_t a_index)
 {
   initialize_io_operation(ap_buf, a_index, sd_page_mem_state_t::read);
 }
 
-void sd_page_mem_t::write_page(const uint8_t* ap_buf, uint32_t a_index)
+void raw_file_page_mem_t::write_page(const uint8_t* ap_buf, uint32_t a_index)
 {
   initialize_io_operation(const_cast<uint8_t*>(ap_buf), a_index, sd_page_mem_state_t::write);
 }
 
-size_t sd_page_mem_t::page_size() const
+size_t raw_file_page_mem_t::page_size() const
 {
   return m_page_size;
 }
 
-uint32_t sd_page_mem_t::page_count() const
+uint32_t raw_file_page_mem_t::page_count() const
 {
   return m_page_count;
 }
 
-bool sd_page_mem_t::ready() const
+bool raw_file_page_mem_t::ready() const
 {
   return m_status == sd_page_mem_state_t::ready;
 }
 
-uint32_t sd_page_mem_t::status() const
+irs_status_t raw_file_page_mem_t::status() const
 {
   return m_status == sd_page_mem_state_t::ready ? irs_st_ready : irs_st_busy;
 }
 
-void sd_page_mem_t::tick()
+void raw_file_page_mem_t::tick()
 {
   switch (m_status) {
     case sd_page_mem_state_t::ready: {
@@ -69,17 +69,17 @@ void sd_page_mem_t::tick()
   }
 }
 
-uint8_t sd_page_mem_t::error() const
+uint8_t raw_file_page_mem_t::error() const
 {
   return m_error_status;
 }
 
-uint32_t sd_page_mem_t::start_page() const
+uint32_t raw_file_page_mem_t::start_page() const
 {
   return m_start_page;
 }
 
-void sd_page_mem_t::initialize_io_operation(
+void raw_file_page_mem_t::initialize_io_operation(
   uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status
 )
 {
@@ -92,7 +92,7 @@ void sd_page_mem_t::initialize_io_operation(
   }
 }
 
-void sd_page_mem_t::print_txt()
+void raw_file_page_mem_t::print_txt()
 {
   m_ios.open(path);
   for (int i = 0; i < m_page_count; ++i) {
