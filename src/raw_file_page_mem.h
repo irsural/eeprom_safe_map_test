@@ -48,24 +48,26 @@ public:
   [[nodiscard]] uint32_t start_page() const;
 
 private:
-  enum class sd_page_mem_state_t {
+  enum class status_t {
     ready,
     write,
     read
   };
 
+  const std::string m_eeprom_filename;
+  const size_t m_page_count;
+  const size_t m_page_size;
+  const size_t m_start_page;
+
   uint8_t* mp_buffer;
   uint32_t m_page_index;
-  sd_page_mem_state_t m_status;
+  status_t m_status;
 
-  size_t m_page_count;
-  size_t m_page_size;
-  size_t m_start_page;
+  uint32_t m_current_byte;
 
-  std::string m_eeprom_filename;
   std::vector<std::vector<uint8_t>> m_eeprom_data;
 
-  void initialize_io_operation(uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status);
+  void initialize_io_operation(uint8_t* ap_data, uint32_t a_index, status_t a_status);
   void write_eeprom_file();
 };
 

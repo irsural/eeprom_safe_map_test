@@ -5,12 +5,14 @@
 raw_file_page_mem::raw_file_page_mem(
   const std::string& a_eeprom_filename, size_t a_page_count, size_t a_page_size, size_t a_start_page
 ) :
-  mp_buffer(nullptr),
-  m_page_index(0),
-  m_status(sd_page_mem_state_t::ready),
+  m_eeprom_filename(a_eeprom_filename),
   m_page_count(a_page_count),
   m_page_size(a_page_size),
   m_start_page(a_start_page),
+  mp_buffer(nullptr),
+  m_page_index(0),
+  m_current_byte(0),
+  m_status(status_t::ready),
   m_eeprom_data(m_page_count)
 {
   std::ifstream eeprom_file(a_eeprom_filename, std::ios::binary | std::ios::in);
@@ -27,12 +29,12 @@ raw_file_page_mem::raw_file_page_mem(
 
 void raw_file_page_mem::read_page(uint8_t* ap_buf, uint32_t a_index)
 {
-  initialize_io_operation(ap_buf, a_index, sd_page_mem_state_t::read);
+  initialize_io_operation(ap_buf, a_index, status_t::read);
 }
 
 void raw_file_page_mem::write_page(const uint8_t* ap_buf, uint32_t a_index)
 {
-  initialize_io_operation(const_cast<uint8_t*>(ap_buf), a_index, sd_page_mem_state_t::write);
+  initialize_io_operation(const_cast<uint8_t*>(ap_buf), a_index, status_t::write);
 }
 
 size_t raw_file_page_mem::page_size() const
@@ -47,31 +49,35 @@ uint32_t raw_file_page_mem::page_count() const
 
 bool raw_file_page_mem::ready() const
 {
-  return m_status == sd_page_mem_state_t::ready;
+  return m_status == status_t::ready;
 }
 
 irs_status_t raw_file_page_mem::status() const
 {
-  return m_status == sd_page_mem_state_t::ready ? irs_st_ready : irs_st_busy;
+  return m_status == status_t::ready ? irs_st_ready : irs_st_busy;
 }
 
 void raw_file_page_mem::tick()
 {
   switch (m_status) {
-    case sd_page_mem_state_t::ready: {
+    case status_t::ready: {
     } break;
-    case sd_page_mem_state_t::read: {
-      for (int i = 0; i < m_page_size; ++i) {
-        mp_buffer[i] = m_eeprom_data[m_page_index][i];
+    case status_t::read: {
+      mp_buffer[m_current_byte] = m_eeprom_data[m_page_index][m_current_byte];
+      m_current_byte += 1;
+
+      if (m_current_byte == m_page_size) {
+        m_status = status_t::ready;
       }
-      m_status = sd_page_mem_state_t::ready;
     } break;
-    case sd_page_mem_state_t::write: {
-      for (int i = 0; i < m_page_size; ++i) {
-        m_eeprom_data[m_page_index][i] = mp_buffer[i];
-      }
+    case status_t::write: {
+      m_eeprom_data[m_page_index][m_current_byte] = mp_buffer[m_current_byte];
+      m_current_byte += 1;
+
       write_eeprom_file();
-      m_status = sd_page_mem_state_t::ready;
+      if (m_current_byte == m_page_size) {
+        m_status = status_t::ready;
+      }
     } break;
   }
 }
@@ -87,7 +93,7 @@ uint32_t raw_file_page_mem::start_page() const
 }
 
 void raw_file_page_mem::initialize_io_operation(
-  uint8_t* ap_data, uint32_t a_index, sd_page_mem_state_t a_status
+  uint8_t* ap_data, uint32_t a_index, status_t a_status
 )
 {
   assert(a_index < m_page_count);
@@ -95,6 +101,8 @@ void raw_file_page_mem::initialize_io_operation(
   mp_buffer = ap_data;
   m_page_index = m_start_page + a_index;
   m_status = a_status;
+
+  m_current_byte = 0;
 }
 
 void raw_file_page_mem::write_eeprom_file()
