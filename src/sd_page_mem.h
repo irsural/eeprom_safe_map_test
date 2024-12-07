@@ -1,14 +1,14 @@
 #ifndef NOISE_GENERATOR_SD_PAGE_MEM_H
 #define NOISE_GENERATOR_SD_PAGE_MEM_H
 
+#include "irs_simulation.h"
+
 #include <cassert>
 #include <cstdint>
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
 #include <string>
-
-#include "irs_simulation.h"
+#include <vector>
 
 const uint32_t irs_st_ready = 1;
 const uint32_t irs_st_busy = 0;

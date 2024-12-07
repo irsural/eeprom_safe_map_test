@@ -2,6 +2,7 @@
 #define NOISE_GENERATOR_OPER_TIME_H
 
 #include "eeprom_safe_map.h"
+
 #include <array>
 #include <sd_page_mem.h>
 
@@ -11,8 +12,12 @@ class oper_time_t
 {
 public:
   /// \param a_no_save_time_periods Время задержки сохранения в eeprom
-  explicit oper_time_t(eeprom_safe_map_t<combination_t, uint32_t>* ap_eeprom_safe_map,
-    int a_save_time_period_min, const combination_t& a_start_combination, bool a_enable = false);
+  explicit oper_time_t(
+    eeprom_safe_map_t<combination_t, uint32_t>* ap_eeprom_safe_map,
+    int a_save_time_period_min,
+    const combination_t& a_start_combination,
+    bool a_enable = false
+  );
   void set_enabled(bool a_enable);
   void tick();
   void set_combination(const combination_t& a_combination);
