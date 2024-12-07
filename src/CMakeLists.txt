@@ -2,8 +2,7 @@ add_executable(eeprom_pc)
 
 target_sources(eeprom_pc PRIVATE
         main.cpp
-        sd_page_mem.cpp
-        irsmem.h
+        raw_file_page_mem_t.cpp
 )
 
 target_include_directories(eeprom_pc PRIVATE

@@ -5,7 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <cassert>
-#include "sd_page_mem.h"
+#include "raw_file_page_mem_t.h"
 
 
 #define IRS_ASSERT(pred) assert((pred))
