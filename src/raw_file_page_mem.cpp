@@ -36,13 +36,6 @@ void raw_file_page_mem::read_page(uint8_t* ap_buf, uint32_t a_index)
 
 void raw_file_page_mem::write_page(const uint8_t* ap_buf, uint32_t a_index)
 {
-  std::cout << "write page " << a_index << std::endl;
-  for (size_t i = 0; i < m_page_size; ++i) {
-    std::cout << std::setfill('0') << std::setw(2) << std::hex << static_cast<int>(ap_buf[i])
-              << " ";
-  }
-  std::cout << std::endl;
-
   initialize_io_operation(const_cast<uint8_t*>(ap_buf), a_index, status_t::write);
 }
 
