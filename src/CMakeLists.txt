@@ -2,7 +2,7 @@ add_executable(eeprom_pc)
 
 target_sources(eeprom_pc PRIVATE
         main.cpp
-        raw_file_page_mem_t.cpp
+        raw_file_page_mem.cpp
 )
 
 target_include_directories(eeprom_pc PRIVATE

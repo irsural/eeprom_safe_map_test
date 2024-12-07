@@ -1,14 +1,10 @@
 #ifndef NOISE_GENERATOR_SD_PAGE_MEM_H
 #define NOISE_GENERATOR_SD_PAGE_MEM_H
 
-#include <cassert>
 #include <cstdint>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <vector>
-
-#define FREE_SPACE_BYTES static_cast<uint32_t>(1 << 11)
 
 enum irs_status_t {
   irs_st_busy,
@@ -31,10 +27,10 @@ public:
 };
 }
 
-class raw_file_page_mem_t : public irs::page_mem_t
+class raw_file_page_mem : public irs::page_mem_t
 {
 public:
-  explicit raw_file_page_mem_t(size_t a_page_count, size_t a_page_size, size_t a_start_page = 0);
+  explicit raw_file_page_mem(size_t a_page_count, size_t a_page_size, size_t a_start_page = 0);
   typedef size_t size_type;
   void read_page(uint8_t* ap_buf, uint32_t a_index);
   void write_page(const uint8_t* ap_buf, uint32_t a_index);

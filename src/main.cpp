@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 #include "eeprom_safe_map.h"
 
@@ -29,7 +30,7 @@ int main()
     make_eeprom(eeprom_path, page_size_bytes, pages_count);
   }
 
-  raw_file_page_mem_t page_mem(pages_count, page_size_bytes);
+  raw_file_page_mem page_mem(pages_count, page_size_bytes);
 
   eeprom_safe_map_t<key_t, uint32_t> m_eeprom_safe_map(
     &page_mem,
