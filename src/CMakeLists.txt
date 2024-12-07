@@ -3,7 +3,6 @@ add_executable(eeprom_pc)
 target_sources(eeprom_pc PRIVATE
         main.cpp
         sd_page_mem.cpp
-        irs_simulation.cpp
         irsmem.h
 )
 

@@ -2,10 +2,14 @@
 #define NOISE_GENERATOR_EEPROM_SAFE_MAP_H
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <irsmem.h>
 #include <vector>
+#include <cassert>
+
+
+#define IRS_ASSERT(pred) assert((pred))
+
 
 /// \brief Класс для записи значений в eeprom
 /// \details Записывает значения в eeprom с экономией ресурса памяти

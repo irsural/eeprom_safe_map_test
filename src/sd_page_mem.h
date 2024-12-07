@@ -1,8 +1,6 @@
 #ifndef NOISE_GENERATOR_SD_PAGE_MEM_H
 #define NOISE_GENERATOR_SD_PAGE_MEM_H
 
-#include "irs_simulation.h"
-
 #include <cassert>
 #include <cstdint>
 #include <fstream>
